@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<itop_design xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.0">
+  <constants>
+  </constants>
+  <classes>
+   <class id="WorkOrder" _delta="merge">
+    <fields>
+      <field id="billing_flag" xsi:type="AttributeEnum" _delta="define">
+        <values>
+          <value id="yes">yes</value>
+          <value id="no">no</value>
+        </values>
+        <sql>billing_flag</sql>
+        <default_value>no</default_value>
+        <is_null_allowed>true</is_null_allowed>
+      </field>
+    </fields>
+    <presentation>
+      <details>
+        <items _delta="merge">
+          <item id="billing_flag">
+            <rank>90</rank>
+          </item>
+        </items>
+      </details>
+      <search>
+        <items _delta="merge">
+          <item id="billing_flag">
+            <rank>90</rank>
+          </item>
+        </items>
+      </search>
+    </presentation>
+   </class>
+  </classes>
+  <menus>
+  </menus>
+  <user_rights>
+    <groups>
+    </groups>
+    <profiles>
+    </profiles>
+  </user_rights>
+</itop_design>

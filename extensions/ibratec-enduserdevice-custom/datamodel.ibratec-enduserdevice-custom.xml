@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<itop_design xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.0">
+  <constants>
+  </constants>
+  <classes>
+    <class id="Phone" _delta="merge">
+      <fields>
+        <field id="extension" xsi:type="AttributeString" _delta="define">
+          <sql>extension</sql>
+          <default_value/>
+          <is_null_allowed>true</is_null_allowed>
+        </field>
+      </fields>
+      <presentation>
+        <details>
+          <items>
+            <item id="extension" _delta="define">
+              <rank>85</rank>
+            </item>
+          </items>
+        </details>
+        <search>
+          <items>
+            <item id="extension" _delta="define">
+              <rank>85</rank>
+            </item>
+          </items>
+        </search>
+        <list>
+          <items>
+            <item id="extension" _delta="define">
+              <rank>65</rank>
+            </item>
+          </items>
+        </list>
+      </presentation>
+    </class>
+  </classes>
+  <menus>
+  </menus>
+  <user_rights>
+    <groups>
+    </groups>
+    <profiles>
+    </profiles>
+  </user_rights>
+</itop_design>
