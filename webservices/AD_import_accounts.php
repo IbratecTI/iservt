@@ -390,22 +390,18 @@ function GetNestedGroups($ad,$aGroup,$aConfigSearch,$aConfigDn)
 {
     $sLdapSearch = str_replace('#group#', $aGroup, $aConfigSearch);
     $aAttribs = array('memberof');
-    //echo "<p>LDAP Query: '$sLdapSearch'</p>";
-    $search = ldap_search($ad, $aConfigDn, $sLdapSearch /*, $aAttribs*/) or die ("ldap search failed");
-    $entries = ldap_get_entries($ad, $search); 
+    $search = ldap_search($ad, $aConfigDn, $sLdapSearch , $aAttribs) or die ("ldap search failed");
+    $entries = ldap_get_entries($ad, $search);
     $aoutput=array();
     $a=array();
     foreach($entries as $adata)
     {
         if($adata['count'] != 0)
         {
-            //print_r($adata);
             foreach($adata as $key=>$amemberofdata)
             {
-                if($key == 'memberof')
+                if($key==="memberof")
                 {
-                    //print_r($amemberofdata);
-                    //array_shift($amemberofdata);
                     foreach($amemberofdata as $keymgo=>$sgroup)
                     {
                         $a[$keymgo]=$sgroup;
@@ -598,42 +594,46 @@ $iSynchronized = 0;
 $iErrors = 0;	
 if ($entries["count"] > 0)
 {
-	$iITopUsers = InitUsersCache();
-	echo "<h1>{$entries["count"]} user(s) found in Active Directory, $iITopUsers (including non-LDAP users) found in iTop.</h1>\n";
-	foreach($entries as $key => $aEntry)
-	{
-		//echo "<pre>$key\n";
-		//print_r($aEntry);
-		//echo "</pre>\n";
-		if (strcmp($key,'count') != 0)
-		{
-			$aData = array();
-			foreach($aAttribs as $sName)
-			{
-                            $aData[$sName] = ReadLdapValue($aEntry, $sName);
-			}
-                        foreach($aData['memberof'] as $aGroup)
+    $iITopUsers = InitUsersCache();
+    echo "<h1>{$entries["count"]} user(s) found in Active Directory, $iITopUsers (including non-LDAP users) found in iTop.</h1>\n";
+    foreach($entries as $key => $aEntry)
+    {
+        if (strcmp($key,'count') != 0)
+        {
+            $aData = array();
+            foreach($aAttribs as $sName)
+            {
+                $aData[$sName] = ReadLdapValue($aEntry, $sName);
+            }
+            $aDataMemberof=array();
+            if(gettype($aData['memberof'])=='array')
+            {
+                foreach($aData['memberof'] as $sGroup)
+                {
+                    $aDataMemberof = GetNestedGroups($ad,$sGroup,$aConfig['ldap_query_group'],$aConfig['dn']);
+                    if(gettype($aDataMemberof)=='array')
+                    {
+                        foreach($aDataMemberof as $sNestedGroup)
                         {
-                            print_r(GetNestedGroups($ad,$aGroup,$aConfig['ldap_query_group'],$aConfig['dn']));
+                            $aData['memberof'][]=$sNestedGroup;
                         }
-			//if (empty($aData['mail']))
-			//{
-			//	$aData['mail'] = $aData['samaccountname'].$domain;
-			//}
-			try
-			{
-                            $sAction = ProcessUser($aData, $index, $aConfig, $oMyChange);
-			}
-			catch(Exception $e)
-			{
-				echo "<p><b>An error occured while processing $index: ".$e->getMessage()."</b></p>";
-				$sAction = 'error';
-			}
-			echo "<hr/>\n";
-			$aStatistics[$sAction]++;
-			$index++;
-		}
-	}
+                    }
+                }
+            }
+            try
+            {
+                $sAction = ProcessUser($aData, $index, $aConfig, $oMyChange);
+            }
+            catch(Exception $e)
+            {
+                    echo "<p><b>An error occured while processing $index: ".$e->getMessage()."</b></p>";
+                    $sAction = 'error';
+            }
+            echo "<hr/>\n";
+            $aStatistics[$sAction]++;
+            $index++;
+        }
+    }
 }
 else
 {
