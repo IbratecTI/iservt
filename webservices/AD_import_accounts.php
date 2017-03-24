@@ -392,8 +392,43 @@ function GetNestedGroups($ad,$aGroup,$aConfigSearch,$aConfigDn)
     $aAttribs = array('memberof');
     //echo "<p>LDAP Query: '$sLdapSearch'</p>";
     $search = ldap_search($ad, $aConfigDn, $sLdapSearch /*, $aAttribs*/) or die ("ldap search failed");
-    $entries = ldap_get_entries($ad, $search);  
-    print_r($entries);
+    $entries = ldap_get_entries($ad, $search); 
+    $aoutput=array();
+    $a=array();
+    foreach($entries as $adata)
+    {
+        if($adata['count'] != 0)
+        {
+            //print_r($adata);
+            foreach($adata as $key=>$amemberofdata)
+            {
+                if($key == 'memberof')
+                {
+                    //print_r($amemberofdata);
+                    //array_shift($amemberofdata);
+                    foreach($amemberofdata as $keymgo=>$sgroup)
+                    {
+                        $a[$keymgo]=$sgroup;
+                    }
+                    foreach($a as $akey=>$soutgroup)
+                    {
+                        if($akey != 'count')
+                        {
+                        $aoutput[]=$soutgroup;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if(empty($aoutput))
+    {
+        return null;
+    }
+    else
+    {
+        return $aoutput;
+    }
 }
 
 /**
@@ -575,11 +610,11 @@ if ($entries["count"] > 0)
 			$aData = array();
 			foreach($aAttribs as $sName)
 			{
-				$aData[$sName] = ReadLdapValue($aEntry, $sName);
+                            $aData[$sName] = ReadLdapValue($aEntry, $sName);
 			}
                         foreach($aData['memberof'] as $aGroup)
                         {
-                                    GetNestedGroups($ad,$aGroup,$aConfig['ldap_query_group'],$aConfig['dn']);
+                            print_r(GetNestedGroups($ad,$aGroup,$aConfig['ldap_query_group'],$aConfig['dn']));
                         }
 			//if (empty($aData['mail']))
 			//{
@@ -587,7 +622,7 @@ if ($entries["count"] > 0)
 			//}
 			try
 			{
-				$sAction = ProcessUser($aData, $index, $aConfig, $oMyChange);
+                            $sAction = ProcessUser($aData, $index, $aConfig, $oMyChange);
 			}
 			catch(Exception $e)
 			{
