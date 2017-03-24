@@ -42,7 +42,7 @@ $aConfig = array(
         // Example 2: retrieves ALL the users from AD
         // 'ldap_query' => '(&(objectCategory=user))', // Retrieve all users
         //'ldap_query_group' => '(member:1.2.840.113556.1.4.1941:= #user#)',
-        'ldap_query_group' => '(objectcategory=group)',    
+        'ldap_query_group' => '(&(objectcategory=group)(distinguishedName= #group#))',    
         // Which field to use as the iTop login samaccountname or userprincipalname ?
         'login' => 'samaccountname',
         //'login' => 'userprincipalname',
@@ -388,10 +388,10 @@ function GetUserByLogin($sLogin)
 
 function GetNestedGroups($ad,$aGroup,$aConfigSearch,$aConfigDn)
 {
-    $sLdapSearch = $aConfig;
-
-    echo "<p>LDAP Query: '$sLdapSearch'</p>";
-    $search = ldap_search($ad, $aConfigDn, $sLdapSearch /*, $aAttribs*/) or die ("ldap search failed");
+    $sLdapSearch = str_replace('#group#', $aGroup, $aConfigSearch);
+    $aAttribs = array('memberof');
+    //echo "<p>LDAP Query: '$sLdapSearch'</p>";
+    $search = ldap_search($ad, $aConfigDn, $sLdapSearch , $aAttribs) or die ("ldap search failed");
 
     $entries = ldap_get_entries($ad, $search);  
     print_r($entries);
