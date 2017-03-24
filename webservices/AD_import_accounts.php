@@ -41,7 +41,8 @@ $aConfig = array(
         #'ldap_query' => '(&(objectClass=posixAccount)(member=CN=DP_TI,ou=people,dc=ibratecgrafica,dc=com,dc=br))',
         // Example 2: retrieves ALL the users from AD
         // 'ldap_query' => '(&(objectCategory=user))', // Retrieve all users
-        'ldap_query_group' => '(member:1.2.840.113556.1.4.1941:= #user#)',
+        //'ldap_query_group' => '(member:1.2.840.113556.1.4.1941:= #user#)',
+        'ldap_query_group' => '(member:1.2.840.113556.1.4.1941:= #user#)',    
         // Which field to use as the iTop login samaccountname or userprincipalname ?
         'login' => 'samaccountname',
         //'login' => 'userprincipalname',
@@ -558,13 +559,40 @@ if ($entries["count"] > 0)
 	{
                 if ($key = 'dn')
                 {
-                    $sLdapSearchGroup = $aConfig['ldap_query_group'];
-                    $sLdapSearchGroup = str_replace('#user#',$aEntry['dn'],$sLdapSearchGroup);
-                    echo "<p>LDAP Query User Group: '$sLdapSearchGroup'</p>";
-                    $searchgroup = ldap_search($ad, $aConfig['dn'], $sLdapSearchGroup /*, $aAttribs*/) or die ("ldap search failed");
-                    $entriesgroup = ldap_get_entries($ad, $searchgroup);
-                    print_r($entriesgroup);
-                }
+//                    $sLdapSearchGroup = $aConfig['ldap_query_group'];
+//                    $sLdapSearchGroup = str_replace('#user#',$aEntry['dn'],$sLdapSearchGroup);
+//                    echo "<p>LDAP Query User Group: '$sLdapSearchGroup'</p>";
+//                    $searchgroup = ldap_search($ad, $aConfig['dn'], $sLdapSearchGroup, array("memberof","primarygroupid")) or die ("ldap search failed");
+//                    $entriesgroup = ldap_get_entries($ad, $searchgroup);
+//                    if($entries['count'] <> 0)
+//                    {
+                        // Get groups and primary group token
+                        $output = $aEntry['dn'][0]['memberof'];
+                        $token = $aEntry['dn'][0]['primarygroupid'][0];
+	
+                        // Remove extraneous first entry
+                        array_shift($output);
+                        
+                        // We need to look up the primary group, get list of all groups
+                        $results2 = ldap_search($ad,$aConfig['dn'],"(objectcategory=group)",array("distinguishedname","primarygrouptoken"));
+                        $entries2 = ldap_get_entries($ad,$results2);
+
+                        // Remove extraneous first entry
+                        array_shift($entries2);    
+                        
+                        // Loop through and find group with a matching primary group token
+                        foreach($entries2 as $e) 
+                        {
+                            if($e['primarygrouptoken'][0] == $token) 
+                            {
+                                // Primary group found, add it to output array
+                                $output[] = $e['distinguishedname'][0];
+                                // Break loop
+                                break;
+                            }                        
+                        }
+                        print_($output);
+//                     }
 		//echo "<pre>$key\n";
 		//print_r($aEntry);
 		//echo "</pre>\n";
