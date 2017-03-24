@@ -386,12 +386,12 @@ function GetUserByLogin($sLogin)
 	return $result;
 }
 
-function GetNestedGroups($ad,$aGroup)
+function GetNestedGroups($ad,$aGroup,$aConfigSearch,$aConfigDn)
 {
-    $sLdapSearch = $aConfig['ldap_query_group'];
+    $sLdapSearch = $aConfig;
 
     echo "<p>LDAP Query: '$sLdapSearch'</p>";
-    $search = ldap_search($ad, $aConfig['dn'], $sLdapSearch /*, $aAttribs*/) or die ("ldap search failed");
+    $search = ldap_search($ad, $aConfigDn, $sLdapSearch /*, $aAttribs*/) or die ("ldap search failed");
 
     $entries = ldap_get_entries($ad, $search);  
     print_r($entries);
@@ -577,7 +577,7 @@ if ($entries["count"] > 0)
 			{
                                 if($key = 'memberof')
                                 {
-                                    GetNestedGroups($ad,$sName);
+                                    GetNestedGroups($ad,$sName,$aConfig['ldap_query_group'],$aConfig['dn']);
                                 }
 				$aData[$sName] = ReadLdapValue($aEntry, $sName);
 			}
