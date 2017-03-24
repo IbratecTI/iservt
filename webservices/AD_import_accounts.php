@@ -13,7 +13,7 @@
 //   You should have received a copy of the GNU General Public License
 //   along with this program; if not, write to the Free Software
 //   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-// blablabla
+
 /**
  * Sample script to import / synchronize users from an Active Directory server
  *
@@ -28,51 +28,49 @@
 // And configure the mapping between AD groups and iTop profiles
 $domain = '@ibratec.local';
 $aConfig = array(
-					// Configuration of the Active Directory connection 
-					'host' 	=> '192.168.0.10', // IP or FQDN of your domain controller
-					'port' 	=> '389', // LDAP port, 398=LDAP, 636= LDAPS
-					'dn'		=> 'ou=Usuarios Ibratec,dc=ibratec,dc=local', // Domain DN
-					'username'	=> 'itopuser@ibratec.local', // username with read access
-	 				'password'	=> 'e2WTS1l8', // password for above
-	 				
-					 // Query to retrieve and filter the users from AD
-	 				// Example: retrieve all users from the AD Group "iTop Users"
-	 				'ldap_query' => '(&(objectClass=user)(CN=*))',
-	 				#'ldap_query' => '(&(objectClass=posixAccount)(member=CN=DP_TI,ou=people,dc=ibratecgrafica,dc=com,dc=br))',
-	 			    // Example 2: retrieves ALL the users from AD
-	 				// 'ldap_query' => '(&(objectCategory=user))', // Retrieve all users
-	 				
-	 				// Which field to use as the iTop login samaccountname or userprincipalname ?
-	 				'login' => 'samaccountname',
-	 				//'login' => 'userprincipalname',
-	 				
-	 				// Mapping between the AD groups and the iTop profiles
-					'profiles_mapping' => array(
-						//AD Group Name => iTop Profile Name
-					'itop_administrator' => 'Administrator',
-					'itop_change_approver' => 'Change Approver',
-					'itop_change_implementor' => 'Change Implementor',
-					'itop_change_supervisor' => 'Change Supervisor',
-					'itop_configuration_manager' => 'Configuration Manager',
-					'itop_document_author' => 'Document author',
-					'itop_hostmaster' => 'Hostmaster',
-					'itop_portal_power_user' => 'Portal power user',
-					'itop_portal_user' => 'Portal user',
-					'itop_problem_manager' => 'Problem Manager',
-					'itop_service_desk_agent' => 'Service Desk Agent',
-					'itop_service_manager' => 'Service Manager',
-					'itop_support_agent' => 'Support Agent',
-					),
-					
-					// Since each iTop user must have at least one profile, assign the profile
-					// Below to users for which there was no match in the above mapping
-					'default_profile' => 'Portal user',
-					
-					'default_language' => 'PT BR', // Default language for creating new users
-					
-					'default_organization' => '4', // ID of the default organization for creating new contacts
-					'default_location' => '1', //Localizacao padrrao
-				);
+        // Configuration of the Active Directory connection 
+        'host' 	=> '192.168.0.10', // IP or FQDN of your domain controller
+        'port' 	=> '389', // LDAP port, 398=LDAP, 636= LDAPS
+        'dn'		=> 'ou=Usuarios Ibratec,dc=ibratec,dc=local', // Domain DN
+        'username'	=> 'itopuser@ibratec.local', // username with read access
+        'password'	=> 'e2WTS1l8', // password for above
+
+         // Query to retrieve and filter the users from AD
+        // Example: retrieve all users from the AD Group "iTop Users"
+        'ldap_query' => '(&(objectClass=user)(CN=*))',
+        #'ldap_query' => '(&(objectClass=posixAccount)(member=CN=DP_TI,ou=people,dc=ibratecgrafica,dc=com,dc=br))',
+        // Example 2: retrieves ALL the users from AD
+        // 'ldap_query' => '(&(objectCategory=user))', // Retrieve all users
+        'ldap_query_group' => '(member:1.2.840.113556.1.4.1941:= #user#)',
+        // Which field to use as the iTop login samaccountname or userprincipalname ?
+        'login' => 'samaccountname',
+        //'login' => 'userprincipalname',
+
+        // Mapping between the AD groups and the iTop profiles
+        'profiles_mapping' => array(
+        //AD Group Name => iTop Profile Name
+        'itop_administrator' => 'Administrator',
+        'itop_change_approver' => 'Change Approver',
+        'itop_change_implementor' => 'Change Implementor',
+        'itop_change_supervisor' => 'Change Supervisor',
+        'itop_configuration_manager' => 'Configuration Manager',
+        'itop_document_author' => 'Document author',
+        'itop_hostmaster' => 'Hostmaster',
+        'itop_portal_power_user' => 'Portal power user',
+        'itop_portal_user' => 'Portal user',
+        'itop_problem_manager' => 'Problem Manager',
+        'itop_service_desk_agent' => 'Service Desk Agent',
+        'itop_service_manager' => 'Service Manager',
+        'itop_support_agent' => 'Support Agent',
+        ),
+
+        // Since each iTop user must have at least one profile, assign the profile
+        // Below to users for which there was no match in the above mapping
+        'default_profile' => 'Portal user',
+        'default_language' => 'PT BR', // Default language for creating new users
+        'default_organization' => '4', // ID of the default organization for creating new contacts
+        'default_location' => '1', //Localizacao padrao
+);
 // End of configuration
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -105,6 +103,7 @@ $aAttribs = array(
 	'physicaldeliveryofficename', //unidade
 	'l', //municipio
 	'department', //departamento
+        'distinguishedName', //Nome a procurar no nested group
 );
 
 $g_aUsersCache = null;   	// Cache of all the iTop users to speed up searches
@@ -541,6 +540,7 @@ echo "<p>LDAP Query: '$sLdapSearch'</p>";
 $search = ldap_search($ad, $aConfig['dn'], $sLdapSearch /*, $aAttribs*/) or die ("ldap search failed");
 
 $entries = ldap_get_entries($ad, $search);
+//print_r($entries);
 $index = 1;
 $aStatistics = array(
 	'created' => 0,
@@ -556,6 +556,15 @@ if ($entries["count"] > 0)
 	echo "<h1>{$entries["count"]} user(s) found in Active Directory, $iITopUsers (including non-LDAP users) found in iTop.</h1>\n";
 	foreach($entries as $key => $aEntry)
 	{
+                if ($key = 'dn')
+                {
+                    $sLdapSearchGroup = $aConfig['ldap_query_group'];
+                    $sLdapSearchGroup = str_replace('#user#',$aEntry['dn'],$sLdapSearchGroup);
+                    echo "<p>LDAP Query User Group: '$sLdapSearchGroup'</p>";
+                    $searchgroup = ldap_search($ad, $aConfig['dn'], $sLdapSearchGroup /*, $aAttribs*/) or die ("ldap search failed");
+                    $entriesgroup = ldap_get_entries($ad, $searchgroup);
+                    print_r($entriesgroup);
+                }
 		//echo "<pre>$key\n";
 		//print_r($aEntry);
 		//echo "</pre>\n";
