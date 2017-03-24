@@ -569,7 +569,8 @@ if ($entries["count"] > 0)
                         // Get groups and primary group token
                         $output = $aEntry['dn'][0]['memberof'];
                         $token = $aEntry['dn'][0]['primarygroupid'][0];
-	
+                        print_r($output);
+                        print_r($token);
                         // Remove extraneous first entry
                         array_shift($output);
                         
@@ -591,7 +592,7 @@ if ($entries["count"] > 0)
                                 break;
                             }                        
                         }
-                        print_($output);
+                        print_r($output);
                      }
 		//echo "<pre>$key\n";
 		//print_r($aEntry);
