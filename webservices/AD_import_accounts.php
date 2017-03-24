@@ -391,11 +391,11 @@ function GetNestedGroups($ad,$aGroup,$aConfigSearch,$aConfigDn)
     $sLdapSearch = str_replace('#group#', $aGroup, $aConfigSearch);
     $aAttribs = array('memberof');
     //echo "<p>LDAP Query: '$sLdapSearch'</p>";
-    $search = ldap_search($ad, $aConfigDn, $sLdapSearch , $aAttribs) or die ("ldap search failed");
-
+    $search = ldap_search($ad, $aConfigDn, $sLdapSearch /*, $aAttribs*/) or die ("ldap search failed");
     $entries = ldap_get_entries($ad, $search);  
     print_r($entries);
 }
+
 /**
  * Initializes the cache for quickly searching iTop users
  * @param none
@@ -575,12 +575,12 @@ if ($entries["count"] > 0)
 			$aData = array();
 			foreach($aAttribs as $sName)
 			{
-                                if($key = 'memberof')
-                                {
-                                    GetNestedGroups($ad,$sName,$aConfig['ldap_query_group'],$aConfig['dn']);
-                                }
 				$aData[$sName] = ReadLdapValue($aEntry, $sName);
 			}
+                        foreach($aData['memberof'] as $aGroup)
+                        {
+                                    GetNestedGroups($ad,$aGroup,$aConfig['ldap_query_group'],$aConfig['dn']);
+                        }
 			//if (empty($aData['mail']))
 			//{
 			//	$aData['mail'] = $aData['samaccountname'].$domain;
