@@ -620,6 +620,18 @@ if ($entries["count"] > 0)
                     }
                 }
             }
+            else if(gettype($aData['memberof'])=='string')
+            {
+                $sGroup=$aData['memberof'];
+                $aDataMemberof = GetNestedGroups($ad,$sGroup,$aConfig['ldap_query_group'],$aConfig['dn']);
+                if(gettype($aDataMemberof)=='array')
+                {
+                    foreach($aDataMemberof as $sNestedGroup)
+                    {
+                        $aData['memberof'][]=$sNestedGroup;
+                    }
+                }
+            }
             try
             {
                 $sAction = ProcessUser($aData, $index, $aConfig, $oMyChange);
