@@ -104,7 +104,6 @@ $aAttribs = array(
 	'physicaldeliveryofficename', //unidade
 	'l', //municipio
 	'department', //departamento
-        'distinguishedName', //Nome a procurar no nested group
 );
 
 $g_aUsersCache = null;   	// Cache of all the iTop users to speed up searches
