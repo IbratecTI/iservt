@@ -104,6 +104,7 @@ $aAttribs = array(
 	'physicaldeliveryofficename', //unidade
 	'l', //municipio
 	'department', //departamento
+        'manager', //gerente ou responsável direto
 );
 
 $g_aUsersCache = null;   	// Cache of all the iTop users to speed up searches
