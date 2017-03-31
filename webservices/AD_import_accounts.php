@@ -105,6 +105,12 @@ $aAttribs = array(
 	'l', //municipio
 	'department', //departamento
         'manager', //gerente ou responsável direto
+        'mobile', //telefone celular
+        'postcode', //matricula
+        'telephonenumber', //telefone fixo
+        'streetaddress', //endereço
+        'userprincipalname', //nome no dominio do AD
+        'employeenumber', //matricula
 );
 
 $g_aUsersCache = null;   	// Cache of all the iTop users to speed up searches
