@@ -668,17 +668,18 @@ foreach($aConfig['dn'] as $bdn)
             echo "<p>LDAP query was: $sLdapSearch</p>\n";
     }
     ldap_unbind($ad);
+
+    if ($bSimulationMode)
+    {
+            echo "<h1 style=\"color:#900\">Simulation mode -- no action was performed</h1>";
+    }
+    echo "<h1>Statistics:</h1>";
+    echo "<table>";
+    foreach($aStatistics as $sKey => $iValue)
+    {
+            echo "<tr><td style=\"vertical-align:top;background-color:eee;\">$sKey</td>\n";
+            echo "<td style=\"vertical-align:top;background-color:eee;\">$iValue</td></tr>\n";
+    }
+    echo "</table>";
 }
-if ($bSimulationMode)
-{
-	echo "<h1 style=\"color:#900\">Simulation mode -- no action was performed</h1>";
-}
-echo "<h1>Statistics:</h1>";
-echo "<table>";
-foreach($aStatistics as $sKey => $iValue)
-{
-	echo "<tr><td style=\"vertical-align:top;background-color:eee;\">$sKey</td>\n";
-	echo "<td style=\"vertical-align:top;background-color:eee;\">$iValue</td></tr>\n";
-}
-echo "</table>";
 ?>
