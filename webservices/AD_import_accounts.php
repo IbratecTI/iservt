@@ -31,7 +31,10 @@ $aConfig = array(
         // Configuration of the Active Directory connection 
         'host' 	=> '192.168.0.10', // IP or FQDN of your domain controller
         'port' 	=> '389', // LDAP port, 398=LDAP, 636= LDAPS
-        'dn'		=> 'ou=Usuarios Ibratec,dc=ibratec,dc=local', // Domain DN
+        'dn'		=> array(
+            'ou=Usuarios Ibratec,dc=ibratec,dc=local', // Base DN Usuários Ibratec
+            'ou=Terceiros,dc=ibratec,dc=local', // Base DN Terceiros
+            ),
         'username'	=> 'itopuser@ibratec.local', // username with read access
         'password'	=> 'e2WTS1l8', // password for above
 
@@ -572,97 +575,100 @@ else
 	echo "<h1 style=\"color:#900\">Simulation mode -- no action will be performed</h1>";
 	echo "<p>Set the parameter simulation=0 to trigger the actual execution.</p>";
 } 
-$ad = ldap_connect($aConfig['host'], $aConfig['port']) or die( "Could not connect to {$aConfig['host']} on port {$aConfig['port']}!" );
-echo "<p>Connected to {$aConfig['host']} on port {$aConfig['port']}</p>\n";
-// Set version number
-ldap_set_option($ad, LDAP_OPT_PROTOCOL_VERSION, 3) or die ("Could not set ldap protocol");
-ldap_set_option($ad, LDAP_OPT_REFERRALS,0) or die ("could no se the ldap referrals");
-
-// Binding to ldap server
-$bd = ldap_bind($ad, $aConfig['username'], $aConfig['password']) or die ("Could not bind");
-echo "<p>Identified as {$aConfig['username']}</p>\n";
-
-$sLdapSearch = $aConfig['ldap_query'];
-
-echo "<p>LDAP Query: '$sLdapSearch'</p>";
-$search = ldap_search($ad, $aConfig['dn'], $sLdapSearch /*, $aAttribs*/) or die ("ldap search failed");
-
-$entries = ldap_get_entries($ad, $search);
-//print_r($entries);
-$index = 1;
-$aStatistics = array(
-	'created' => 0,
-	'synchronized' => 0,
-	'error' => 0,
-);
-$iCreated = 0;
-$iSynchronized = 0;
-$iErrors = 0;	
-if ($entries["count"] > 0)
+foreach($aConfig['dn'] as $bdn)
 {
-    $iITopUsers = InitUsersCache();
-    echo "<h1>{$entries["count"]} user(s) found in Active Directory, $iITopUsers (including non-LDAP users) found in iTop.</h1>\n";
-    foreach($entries as $key => $aEntry)
+    $ad = ldap_connect($aConfig['host'], $aConfig['port']) or die( "Could not connect to {$aConfig['host']} on port {$aConfig['port']}!" );
+    echo "<p>Connected to {$aConfig['host']} on port {$aConfig['port']}</p>\n";
+    // Set version number
+    ldap_set_option($ad, LDAP_OPT_PROTOCOL_VERSION, 3) or die ("Could not set ldap protocol");
+    ldap_set_option($ad, LDAP_OPT_REFERRALS,0) or die ("could no se the ldap referrals");
+
+    // Binding to ldap server
+    $bd = ldap_bind($ad, $aConfig['username'], $aConfig['password']) or die ("Could not bind");
+    echo "<p>Identified as {$aConfig['username']}</p>\n";
+
+    $sLdapSearch = $aConfig['ldap_query'];
+
+    echo "<p>LDAP Query: '$sLdapSearch'</p>";
+    $search = ldap_search($ad, $bdn, $sLdapSearch /*, $aAttribs*/) or die ("ldap search failed");
+
+    $entries = ldap_get_entries($ad, $search);
+    //print_r($entries);
+    $index = 1;
+    $aStatistics = array(
+            'created' => 0,
+            'synchronized' => 0,
+            'error' => 0,
+    );
+    $iCreated = 0;
+    $iSynchronized = 0;
+    $iErrors = 0;	
+    if ($entries["count"] > 0)
     {
-        if (strcmp($key,'count') != 0)
+        $iITopUsers = InitUsersCache();
+        echo "<h1>{$entries["count"]} user(s) found in Active Directory, $iITopUsers (including non-LDAP users) found in iTop.</h1>\n";
+        foreach($entries as $key => $aEntry)
         {
-            $aData = array();
-            foreach($aAttribs as $sName)
+            if (strcmp($key,'count') != 0)
             {
-                $aData[$sName] = ReadLdapValue($aEntry, $sName);
-            }
-            $aDataMemberof=array();
-            if(gettype($aData['memberof'])=='array')
-            {
-                foreach($aData['memberof'] as $sGroup)
+                $aData = array();
+                foreach($aAttribs as $sName)
                 {
-                    $aDataMemberof = GetNestedGroups($ad,$sGroup,$aConfig['ldap_query_group'],$aConfig['dn']);
+                    $aData[$sName] = ReadLdapValue($aEntry, $sName);
+                }
+                $aDataMemberof=array();
+                if(gettype($aData['memberof'])=='array')
+                {
+                    foreach($aData['memberof'] as $sGroup)
+                    {
+                        $aDataMemberof = GetNestedGroups($ad,$sGroup,$aConfig['ldap_query_group'],$bdn);
+                        if(gettype($aDataMemberof)=='array')
+                        {
+                            foreach($aDataMemberof as $sNestedGroup)
+                            {
+                                $aData['memberof'][]=$sNestedGroup;
+                            }
+                        }
+                    }
+                }
+                else if(gettype($aData['memberof'])=='string')
+                {
+                    $sGroup=$aData['memberof'];
+                    unset($aData['memberof']);
+                    $aData['memberof']=array();
+                    $aData['memberof'][]=$sGroup;
+                    $aDataMemberof = GetNestedGroups($ad,$sGroup,$aConfig['ldap_query_group'],$bdn);
                     if(gettype($aDataMemberof)=='array')
                     {
                         foreach($aDataMemberof as $sNestedGroup)
                         {
+
                             $aData['memberof'][]=$sNestedGroup;
                         }
                     }
                 }
-            }
-            else if(gettype($aData['memberof'])=='string')
-            {
-                $sGroup=$aData['memberof'];
-                unset($aData['memberof']);
-                $aData['memberof']=array();
-                $aData['memberof'][]=$sGroup;
-                $aDataMemberof = GetNestedGroups($ad,$sGroup,$aConfig['ldap_query_group'],$aConfig['dn']);
-                if(gettype($aDataMemberof)=='array')
+                try
                 {
-                    foreach($aDataMemberof as $sNestedGroup)
-                    {
-                        
-                        $aData['memberof'][]=$sNestedGroup;
-                    }
+                    $sAction = ProcessUser($aData, $index, $aConfig, $oMyChange);
                 }
+                catch(Exception $e)
+                {
+                        echo "<p><b>An error occured while processing $index: ".$e->getMessage()."</b></p>";
+                        $sAction = 'error';
+                }
+                echo "<hr/>\n";
+                $aStatistics[$sAction]++;
+                $index++;
             }
-            try
-            {
-                $sAction = ProcessUser($aData, $index, $aConfig, $oMyChange);
-            }
-            catch(Exception $e)
-            {
-                    echo "<p><b>An error occured while processing $index: ".$e->getMessage()."</b></p>";
-                    $sAction = 'error';
-            }
-            echo "<hr/>\n";
-            $aStatistics[$sAction]++;
-            $index++;
         }
     }
+    else
+    {
+            echo "<p>Nothing found !</p>\n";
+            echo "<p>LDAP query was: $sLdapSearch</p>\n";
+    }
+    ldap_unbind($ad);
 }
-else
-{
-	echo "<p>Nothing found !</p>\n";
-	echo "<p>LDAP query was: $sLdapSearch</p>\n";
-}
-ldap_unbind($ad);
 if ($bSimulationMode)
 {
 	echo "<h1 style=\"color:#900\">Simulation mode -- no action was performed</h1>";
