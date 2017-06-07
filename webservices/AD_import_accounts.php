@@ -615,6 +615,7 @@ foreach($aConfig['dn'] as $bdn)
                 foreach($aAttribs as $sName)
                 {
                     $aData[$sName] = ReadLdapValue($aEntry, $sName);
+                    echo "$sName : $aData[$sName]";
                 }
                 $aDataMemberof=array();
                 if(gettype($aData['memberof'])=='array')
